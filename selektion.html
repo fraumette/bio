@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Security: CSP to restrict resource loading and prevent object embedding -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data: https:; object-src 'none'; base-uri 'none';">
+    <title>Canvas Preview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 1rem;
+        }
+        
+    </style>
+</head>
+<body>
+    <!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simulation: Natürliche Selektion</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    h1 { color: #2c3e50; margin-top: 0; }
+
+    .explanation {
+      padding: 15px;
+      margin-bottom: 20px;
+      background: #eef2f7;
+      border-left: 5px solid #3498db;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .controls, .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 15px;
+      padding: 12px;
+      background: #fafbfc;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-right: auto;
+    }
+
+    .env-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    button {
+      padding: 9px 13px;
+      border: 2px solid #ccc;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .env-btn.active {
+      outline: 3px solid #2c3e50;
+      outline-offset: 2px;
+    }
+
+    .action-btn {
+      color: white;
+      border: none;
+      background: #e74c3c;
+    }
+
+    .action-btn:hover:not(:disabled) { background: #c0392b; }
+
+    #resetBtn { background: #34495e; color: white; border: none; }
+    #resetBtn:hover { background: #243342; }
+
+    .stats { font-weight: bold; font-size: 14px; }
+    .stats span { color: #2c3e50; }
+
+    #field {
+      width: 100%;
+      height: 400px;
+      position: relative;
+      overflow: hidden;
+      border: 2px solid #bdc3c7;
+      border-radius: 6px;
+      transition: background-color 0.4s ease;
+    }
+
+    .bunny {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      transform: translate(-50%, -50%);
+      filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
+      transition: all 0.5s ease;
+    }
+
+    .message-box {
+      min-height: 20px;
+      margin-top: 15px;
+      padding: 10px;
+      text-align: center;
+      font-weight: bold;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Evolutions-Simulation: Natürliche Selektion</h1>
+
+  <div class="explanation">
+    <strong>Ziel & Hintergrund:</strong> Diese Simulation veranschaulicht die natürliche Selektion. 
+    Es startet mit je 5 Hasen jeder Farbe (Weiß, Grau, Braun, Schwarz). Wähle über die Schaltflächen den Lebensraum (Bodenfarbe) aus. 
+    Klicke anschließend auf <strong>„Wölfe rufen“</strong>. Die Wölfe jagen bevorzugt Hasen, die sich stark vom Boden abheben 
+    (z. B. helle Hasen auf dunklem Grund oder dunkle Hasen auf hellem Grund). 
+    Gut getarnte Hasen überleben häufiger und pflanzen sich fort. In jeder Generation treten zufällige Mutationen auf. 
+    Beobachte in der Statistik, wie sich die Farbverteilung der Hasen an den gewählten Lebensraum anpasst!
+  </div>
+
+  <div class="controls">
+    <div class="control-group">
+      <strong>Bodenfarbe (Lebensraum) wählen:</strong>
+      <div class="env-buttons">
+        <button class="env-btn" data-env="white" style="background:#ffffff; color:#333;" onclick="setEnvironment('white')">Weiß</button>
+        <button class="env-btn" data-env="green" style="background:#4caf50; color:white;" onclick="setEnvironment('green')">Grasgrün</button>
+        <button class="env-btn" data-env="lightbrown" style="background:#c88a51; color:white;" onclick="setEnvironment('lightbrown')">Hellbraun</button>
+        <button class="env-btn" data-env="darkbrown" style="background:#5c3a21; color:white;" onclick="setEnvironment('darkbrown')">Dunkelbraun</button>
+      </div>
+    </div>
+
+    <button id="wolfBtn" class="action-btn" onclick="callWolves()">Wölfe rufen</button>
+    <button id="resetBtn" onclick="resetGame()">Neu starten</button>
+  </div>
+
+  <div class="stats">
+    <span>Generation: <span id="genCount">1</span></span> &nbsp;|&nbsp;
+    <span>Gesamt: <span id="bunnyCount">20</span></span> &nbsp;|&nbsp;
+    <span>⚪ Weiß: <span id="countWhite">5</span></span> &nbsp;|&nbsp;
+    <span>🔘 Grau: <span id="countGray">5</span></span> &nbsp;|&nbsp;
+    <span>🟤 Braun: <span id="countBrown">5</span></span> &nbsp;|&nbsp;
+    <span>⚫ Schwarz: <span id="countBlack">5</span></span>
+  </div>
+
+  <div id="field"></div>
+  <div id="statusMessage" class="message-box" aria-live="polite"></div>
+</div>
+
+<script>
+  const colors = [
+    { id: "white", name: "Weiß", r: 245, g: 245, b: 245, brightness: 245 },
+    { id: "gray", name: "Grau", r: 140, g: 140, b: 140, brightness: 140 },
+    { id: "brown", name: "Braun", r: 139, g: 69, b: 19, brightness: 75 },
+    { id: "black", name: "Schwarz", r: 40, g: 40, b: 40, brightness: 40 }
+  ];
+
+  const environments = {
+    white:      { name: "Weiß", hex: "#ffffff", brightness: 255 },
+    green:      { name: "Grasgrün", hex: "#4caf50", brightness: 125 },
+    lightbrown: { name: "Hellbraun", hex: "#c88a51", brightness: 145 },
+    darkbrown:  { name: "Dunkelbraun", hex: "#5c3a21", brightness: 60 }
+  };
+
+  const initialEnvironment = "green";
+  const maxBunnies = 50;
+  let currentEnvironment = initialEnvironment;
+  let generation = 1;
+  let bunnies = [];
+
+  function makeBunny(color) {
+    return {
+      color,
+      x: Math.random() * 88 + 6,
+      y: Math.random() * 88 + 6
+    };
+  }
+
+  function resetGame() {
+    generation = 1;
+    currentEnvironment = initialEnvironment;
+
+    // Exakt 5 Hasen von jeder Farbe (insgesamt 20 Hasen)
+    bunnies = colors.flatMap(color =>
+      Array.from({ length: 5 }, () => makeBunny(color))
+    );
+
+    document.getElementById("wolfBtn").disabled = false;
+
+    const message = document.getElementById("statusMessage");
+    message.textContent = "";
+    message.style.backgroundColor = "transparent";
+    message.style.color = "#333";
+
+    updateEnvironmentDisplay();
+    renderBunnies();
+  }
+
+  function setEnvironment(environmentId) {
+    if (document.getElementById("wolfBtn").disabled) return;
+    currentEnvironment = environmentId;
+    updateEnvironmentDisplay();
+  }
+
+  function updateEnvironmentDisplay() {
+    const environment = environments[currentEnvironment];
+    document.getElementById("field").style.backgroundColor = environment.hex;
+
+    document.querySelectorAll(".env-btn").forEach(button => {
+      button.classList.toggle(
+        "active",
+        button.dataset.env === currentEnvironment
+      );
+    });
+  }
+
+  function renderBunnies() {
+    const field = document.getElementById("field");
+    field.replaceChildren();
+
+    bunnies.forEach(bunny => {
+      const element = document.createElement("div");
+      element.className = "bunny";
+      element.style.left = bunny.x + "%";
+      element.style.top = bunny.y + "%";
+
+      const fill = `rgb(${bunny.color.r},${bunny.color.g},${bunny.color.b})`;
+      const outline = bunny.color.id === "black" ? "#ffffff" : "#222222";
+      const innerEar = bunny.color.id === "white" ? "#ffcccc" : "#ffb6c1";
+      const face = bunny.color.id === "black" ? "#ffffff" : "#222222";
+
+      element.innerHTML = `
+        <svg viewBox="0 0 100 100" width="100%" height="100%" aria-label="Hase, ${bunny.color.name}">
+          <!-- Ohren -->
+          <ellipse cx="35" cy="30" rx="10" ry="25" fill="${fill}" stroke="${outline}" stroke-width="4"/>
+          <ellipse cx="35" cy="30" rx="5" ry="18" fill="${innerEar}"/>
+          <ellipse cx="65" cy="30" rx="10" ry="25" fill="${fill}" stroke="${outline}" stroke-width="4"/>
+          <ellipse cx="65" cy="30" rx="5" ry="18" fill="${innerEar}"/>
+          <!-- Kopf -->
+          <circle cx="50" cy="60" r="25" fill="${fill}" stroke="${outline}" stroke-width="4"/>
+          <!-- Augen -->
+          <circle cx="42" cy="55" r="3" fill="${face}"/>
+          <circle cx="58" cy="55" r="3" fill="${face}"/>
+          <!-- Nase -->
+          <polygon points="47,65 53,65 50,70" fill="${face}"/>
+        </svg>`;
+      field.appendChild(element);
+    });
+
+    updateStats();
+  }
+
+  function updateStats() {
+    const counts = { white: 0, gray: 0, brown: 0, black: 0 };
+    bunnies.forEach(bunny => counts[bunny.color.id]++);
+
+    document.getElementById("genCount").textContent = generation;
+    document.getElementById("bunnyCount").textContent = bunnies.length;
+    document.getElementById("countWhite").textContent = counts.white;
+    document.getElementById("countGray").textContent = counts.gray;
+    document.getElementById("countBrown").textContent = counts.brown;
+    document.getElementById("countBlack").textContent = counts.black;
+  }
+
+  function callWolves() {
+    if (bunnies.length === 0) return;
+
+    const environment = environments[currentEnvironment];
+    const previousGeneration = generation;
+
+    const survivors = bunnies.filter(bunny => {
+      const contrast = Math.abs(bunny.color.brightness - environment.brightness);
+      // Größerer Helligkeitskontrast bedeutet schlechtere Tarnung -> geringere Überlebenschance
+      const survivalChance = Math.max(0.08, 1 - contrast / 160);
+      return Math.random() < survivalChance;
+    });
+
+    // In der ersten Runde überlebt garantiert mindestens ein Hase (kein sofortiges Aussterben).
+    if (previousGeneration === 1 && survivors.length === 0) {
+      const bestCamouflaged = bunnies.reduce((best, bunny) => {
+        const bestContrast = Math.abs(best.color.brightness - environment.brightness);
+        const bunnyContrast = Math.abs(bunny.color.brightness - environment.brightness);
+        return bunnyContrast < bestContrast ? bunny : best;
+      });
+      survivors.push(bestCamouflaged);
+    }
+
+    bunnies = survivors;
+
+    // Ab Runde 2 kann die Population bei schlechter Tarnung komplett aussterben.
+    if (bunnies.length === 0) {
+      document.getElementById("wolfBtn").disabled = true;
+      const message = document.getElementById("statusMessage");
+      message.textContent = "Alle Hasen wurden von den Wölfen gefressen! Du hast verloren. Starte neu.";
+      message.style.backgroundColor = "#f8d7da";
+      message.style.color = "#721c24";
+      updateStats();
+      renderBunnies();
+      return;
+    }
+
+    const offspringCount = Math.min(maxBunnies, bunnies.length * 2);
+    const nextGeneration = [];
+
+    for (let i = 0; i < offspringCount; i++) {
+      const parent = bunnies[Math.floor(Math.random() * bunnies.length)];
+      let childColor = parent.color;
+
+      // Zufällige Mutation: Mit 25% Wahrscheinlichkeit entsteht eine andere natürliche Fellfarbe
+      if (Math.random() < 0.25) {
+        childColor = colors[Math.floor(Math.random() * colors.length)];
+      }
+
+      nextGeneration.push(makeBunny(childColor));
+    }
+
+    bunnies = nextGeneration;
+    generation++;
+
+    const message = document.getElementById("statusMessage");
+    message.textContent = `Wölfe haben angegriffen! Die Überlebenden haben sich fortgepflanzt (Generation ${generation}).`;
+    message.style.backgroundColor = "#d4edda";
+    message.style.color = "#155724";
+
+    renderBunnies();
+  }
+
+  // Simulation beim Laden initialisieren
+  resetGame();
+</script>
+</body>
+</html>
+    <script>
+        function showSecurityMessage() {
+            // Avoid duplicates
+            if (document.getElementById('security-alert-box')) return;
+            
+            const msg = document.createElement('div');
+            msg.id = 'security-alert-box';
+            msg.style.cssText = 'position: fixed; bottom: 10px; left: 10px; right: 10px; background: #fff3cd; color: #856404; padding: 15px; border: 1px solid #ffeeba; border-radius: 4px; font-family: system-ui, -apple-system, sans-serif; z-index: 9999; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 10px;';
+            msg.innerHTML = '<span style="font-size: 1.2em;">⚠️</span><div><strong>Sicherheitshinweis:</strong> Einige Funktionen dieses Codes wurden blockiert, da sie potenziell unsicher sind. Dies dient dem Schutz Ihrer Daten.</div>';
+            document.body.appendChild(msg);
+        }
+
+        document.addEventListener('securitypolicyviolation', (e) => {
+            showSecurityMessage();
+        });
+
+        try {
+            
+        } catch (error) {
+            console.error('JavaScript Error:', error);
+            if (error.name === 'SecurityError' || error.message.includes('Security')) {
+                showSecurityMessage();
+            } else {
+                document.body.innerHTML += '<div style="color: red; padding: 1rem; background: #fee; border: 1px solid red; margin-top: 1rem;">Error: ' + error.message + '</div>';
+            }
+        }
+    </script>
+</body>
+</html>
